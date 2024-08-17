@@ -90,7 +90,10 @@ impl DynamicState {
             Self::ChooseChancellor { options } => StateView::ChooseChancellor {
                 options: options.clone(),
             },
-            Self::VoteChancellor { canidate, .. } => StateView::VoteChancellor {
+            Self::VoteChancellor {
+                chancellor: canidate,
+                ..
+            } => StateView::VoteChancellor {
                 canidate: canidate.clone(),
             },
             Self::PresidentChooseLaws { chancellor, .. } => StateView::PresidentChooseLaws {

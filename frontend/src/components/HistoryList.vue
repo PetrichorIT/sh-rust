@@ -10,6 +10,7 @@
                 <v-avatar
                     :image="playerImage(item.ChooseChancellor.president)"
                 ></v-avatar>
+                <v-icon>mdi-arrow-right</v-icon>
                 <v-avatar
                     :image="playerImage(item.ChooseChancellor.chancellor)"
                 ></v-avatar

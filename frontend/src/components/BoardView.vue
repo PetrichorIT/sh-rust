@@ -1,11 +1,17 @@
 <template>
     <!-- 75vw width - padding -->
 
-    <v-row align="center" justify="center">
+    <v-row no-gutters>
+        <v-col style="border: 1px solid red"> ICON </v-col>
+        <v-col>
+            <v-spacer />
+        </v-col>
         <v-col
             cols="auto"
+            class="ml-2"
             v-for="player in state.board.players"
             v-bind:key="player.id"
+            style="border: 1px solid blue"
         >
             <PlayerCard :player="player" :state="state" />
         </v-col>
@@ -13,8 +19,17 @@
 
     <br />
 
-    <v-row no-gutters>
-        <v-col>
+    <v-row justify="end" no-gutters>
+        <v-col cols="2" style="border: 1px solid red">
+            <v-container width="10vw" style="margin-top: 15px">
+                <v-img class="mt-10" src="/img/draw-pile.png" />
+            </v-container>
+            <v-container width="10vw" style="margin-top: 50px">
+                <v-img class="mt-10" src="/img/discard-pile.png" />
+            </v-container>
+        </v-col>
+
+        <v-col cols="10" width="50vw" style="border: 1px solid green">
             <v-container width="50vw">
                 <LawsField
                     :main-image="board_image"
@@ -22,27 +37,13 @@
                     faction="Fasho"
                 />
             </v-container>
-        </v-col>
-    </v-row>
 
-    <v-row no-gutters>
-        <v-col>
-            <v-container width="10vw">
-                <v-img class="mt-10" src="/img/draw-pile.png" />
-            </v-container>
-        </v-col>
-        <v-col>
             <v-container width="50vw">
                 <LawsField
                     main-image="laws-liberal.png"
                     :passed="state.board.passed_liberal_laws"
                     faction="Liberal"
                 />
-            </v-container>
-        </v-col>
-        <v-col>
-            <v-container width="10vw">
-                <v-img class="mt-10" src="/img/discard-pile.png" />
             </v-container>
         </v-col>
     </v-row>

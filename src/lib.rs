@@ -22,15 +22,21 @@ use tokio::{
     net::TcpListener,
     sync::{Mutex, RwLock},
 };
+use tower_http::services::ServeDir;
 
 pub async fn launch() -> Result<(), Box<dyn Error>> {
-    // let static_file_service = ServeDir::new("frontend").append_index_html_on_directories(true);
+    let static_file_service = ServeDir::new("frontend/dist").append_index_html_on_directories(true);
     let app = Router::new()
-        // .fallback_service(static_file_service)
+        .fallback_service(static_file_service)
         .route("/ws", get(handle_ws_upgrade))
         .with_state(Arc::new(RwLock::new(GameState::new(Vec::new()))));
 
-    let listener = TcpListener::bind("0.0.0.0:3001").await?;
+    let port = std::env::var("PORT")
+        .unwrap_or("8000".to_string())
+        .parse()
+        .unwrap();
+
+    let listener = TcpListener::bind(("0.0.0.0", port)).await?;
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),

@@ -56,7 +56,7 @@ pub enum DynamicState {
         options: Vec<PlayerId>,
     },
     VoteChancellor {
-        canidate: PlayerId,
+        chancellor: PlayerId,
         votes: HashMap<PlayerId, Option<bool>>,
     },
     PresidentChooseLaws {
@@ -345,14 +345,15 @@ impl GameState {
             DynamicState::ChooseChancellor { options } => (*player_id
                 == self.board.current_president)
                 .then(|| Task::ChooseChancellor(options.clone())),
-            DynamicState::VoteChancellor { canidate, votes } => {
-                votes.get(player_id).unwrap().is_none().then(|| {
-                    Task::Vote(VotingProposal {
-                        president: self.board.current_president.clone(),
-                        chancellor: canidate.clone(),
-                    })
+            DynamicState::VoteChancellor {
+                chancellor: canidate,
+                votes,
+            } => votes.get(player_id).unwrap().is_none().then(|| {
+                Task::Vote(VotingProposal {
+                    president: self.board.current_president.clone(),
+                    chancellor: canidate.clone(),
                 })
-            }
+            }),
             DynamicState::PresidentChooseLaws { laws, .. } => (*player_id
                 == self.board.current_president)
                 .then(|| Task::PickLaws(laws.to_vec(), false)),
@@ -409,14 +410,14 @@ impl GameState {
                         .map(|p| (p.id.clone(), None))
                         .collect();
                     DynamicState::VoteChancellor {
-                        canidate: choosen,
+                        chancellor: choosen,
                         votes,
                     }
                 }
             }
             (
                 DynamicState::VoteChancellor {
-                    canidate,
+                    chancellor,
                     mut votes,
                 },
                 Vote(agree),
@@ -437,7 +438,7 @@ impl GameState {
 
                     self.board.history.push(Event::Vote {
                         president: self.board.current_president.clone(),
-                        chancellor: canidate.clone(),
+                        chancellor: chancellor.clone(),
                         votes: votes
                             .iter()
                             .flat_map(|(k, v)| Some((k.clone(), (*v)?)))
@@ -455,7 +456,7 @@ impl GameState {
 
                         DynamicState::PresidentChooseLaws {
                             laws,
-                            chancellor: canidate.clone(),
+                            chancellor: chancellor.clone(),
                         }
                     } else {
                         // Vote failed
@@ -469,7 +470,7 @@ impl GameState {
                         }
                     }
                 } else {
-                    DynamicState::VoteChancellor { canidate, votes }
+                    DynamicState::VoteChancellor { chancellor, votes }
                 }
             }
 
