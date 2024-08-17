@@ -1,6 +1,8 @@
+use rand::distributions::Alphanumeric;
 use rand::prelude::SliceRandom;
-use rand::thread_rng;
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::iter::{once, repeat};
 
 pub type PlayerId = String;
@@ -20,7 +22,8 @@ pub struct Player {
     pub role: Role,
     pub alive: bool,
 
-    pub pending_task: Option<Task>,
+    pub connected: bool,
+    pub access_key: String,
 }
 
 impl Player {
@@ -30,7 +33,13 @@ impl Player {
             user,
             role: Role::Liberal,
             alive: true,
-            pending_task: None,
+
+            connected: true,
+            access_key: thread_rng()
+                .sample_iter(&Alphanumeric)
+                .take(32)
+                .map(char::from)
+                .collect::<String>(),
         }
     }
 }
@@ -40,7 +49,7 @@ pub type Law = Faction;
 impl Law {
     pub fn full_draw_pile() -> Vec<Law> {
         let liberals = repeat(Law::Liberal).take(6);
-        let fashos = repeat(Law::Fasho).take(69);
+        let fashos = repeat(Law::Fasho).take(9);
         let mut pile = liberals.chain(fashos).collect::<Vec<_>>();
         pile.shuffle(&mut thread_rng());
         pile
@@ -80,11 +89,13 @@ impl Role {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(tag = "type", content = "value")]
 pub enum Task {
     ChooseChancellor(Vec<PlayerId>),
     Vote(VotingProposal),
-    PickLaws(Vec<Law>),
-    ExecutiveAction(ExecutiveAction),
+    PickLaws(Vec<Law>, bool),
+    ExecutiveAction(ExecutiveActionTask),
+    ConfirmVeto,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -94,7 +105,9 @@ pub struct VotingProposal {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(tag = "type", content = "value")]
 pub enum TaskAction {
+    Start,
     ChooseChancellor(PlayerId),
     Vote(bool),
     PickedLaws(Vec<Law>, Law),
@@ -111,11 +124,21 @@ pub enum ExecutiveAction {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(tag = "type", content = "value")]
+pub enum ExecutiveActionTask {
+    Kill,
+    RevealFaction,
+    DeterminePresident,
+    RevealNextCards(Vec<Law>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(tag = "type", content = "value")]
 pub enum ExecutiveActionResponse {
     Kill(PlayerId),
     RevealFaction(PlayerId),
     DeterminePresident(PlayerId),
-    RevealNextCards(),
+    RevealNextCards,
 }
 
 impl ExecutiveAction {
@@ -130,8 +153,16 @@ impl ExecutiveAction {
                 Some(Kill),
                 None,
             ],
-            7 | 8 | 9 | 10 => [
+            7 | 8 => [
                 None,
+                Some(RevealFaction),
+                Some(DeterminePresident),
+                Some(Kill),
+                Some(Kill),
+                None,
+            ],
+            9 | 10 => [
+                Some(RevealFaction),
                 Some(RevealFaction),
                 Some(DeterminePresident),
                 Some(Kill),
@@ -144,3 +175,26 @@ impl ExecutiveAction {
 }
 
 pub type Win = Faction;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Event {
+    ChooseChancellor {
+        president: PlayerId,
+        chancellor: PlayerId,
+    },
+    Vote {
+        president: PlayerId,
+        chancellor: PlayerId,
+        votes: HashMap<PlayerId, bool>,
+        success: bool,
+    },
+    PlayedLaw {
+        president: PlayerId,
+        chancellor: Option<PlayerId>,
+        law: Law,
+    },
+    Veto {
+        president: PlayerId,
+        chancellor: PlayerId,
+    },
+}
